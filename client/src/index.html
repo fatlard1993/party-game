@@ -1,21 +1,64 @@
-<script type="text/javascript">
-	const ws = new WebSocket('ws://'+ location.host +'/api');
+<html>
+	<script type="text/javascript">
+		var Loaded = false;
 
-  ws.addEventListener('open', function(evt){
-		console.log('Websocket connection open: ', evt);
+		function Load(){
+			if(Loaded) return;
+			Loaded = true;
 
-    ws.send(JSON.stringify({ type: 'knock', user: { id: localStorage.id } }));
-	});
+			const ws = new WebSocket('ws://'+ location.host +'/api');
+			const gameStatus = document.getElementById('status');
+			const gameButton = document.getElementById('action');
+			var game = {};
 
-  ws.addEventListener('message', function(evt){
-		console.log('Message from server: ', evt.data);
+			ws.json = function(data){
+				ws.send(JSON.stringify(data));
+			};
 
-		var data = JSON.parse(evt.data);
+			ws.addEventListener('open', function(evt){
+				console.log('Websocket connection open: ', evt);
 
-		if(data.type === 'welcome'){
-			if(data.user) return localStorage.id = data.user.id;
+				gameStatus.textContent += '.';
 
-			console.log(data.game);
+				ws.json({ type: 'knock', user: { id: localStorage.id } });
+			});
+
+			ws.addEventListener('message', function(evt){
+				console.log('Message from server: ', evt.data);
+
+				var data = JSON.parse(evt.data);
+
+				if(data.type === 'welcome'){
+					gameStatus.textContent = 'READY';
+					gameButton.textContent = 'Start';
+
+					localStorage.id = data.user.id;
+					game = data.game;
+				}
+
+				else if(data.type === 'gameState'){
+					game = Object.assign(game, data.state);
+
+					console.log(game);
+				}
+			});
+
+			function onPointerUp(evt){
+				console.log('onPointerUp', evt);
+
+				if(evt.target.id === 'action'){
+					ws.json({ type: 'updateState', state: { screen: { width: window.innerWidth, height: window.innerHeight } } });
+				}
+			}
+
+			document.addEventListener('click', onPointerUp);
+			document.addEventListener('touchend', onPointerUp);
 		}
-	});
-</script>
+
+		document.addEventListener('DOMContentLoaded', Load);
+	</script>
+	<body>
+		<div id="status">Loading.</div>
+		<button id="action"></button>
+	</body>
+</html>

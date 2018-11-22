@@ -25,7 +25,7 @@ server.listen(PORT, (err) => {
 			clientConnection.send(JSON.stringify({ type: 'welcome', game: game.state }));
 		}
 
-		else clientConnection.send(JSON.stringify({ type: 'welcome', user: { id: user.state.id } }));
+		else clientConnection.send(JSON.stringify({ type: 'welcome', game: game.state, user: { id: user.state.id } }));
 
 		game.state.users[user.state.id] = user;//doesnt emit change
 		game.state[user.state.id] = 1;// if this is set to user it crashes
