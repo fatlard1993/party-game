@@ -1,0 +1,21 @@
+<script type="text/javascript">
+	const ws = new WebSocket('ws://'+ location.host +'/api');
+
+  ws.addEventListener('open', function(evt){
+		console.log('Websocket connection open: ', evt);
+
+    ws.send(JSON.stringify({ type: 'knock', user: { id: localStorage.id } }));
+	});
+
+  ws.addEventListener('message', function(evt){
+		console.log('Message from server: ', evt.data);
+
+		var data = JSON.parse(evt.data);
+
+		if(data.type === 'welcome'){
+			if(data.user) return localStorage.id = data.user.id;
+
+			console.log(data.game);
+		}
+	});
+</script>

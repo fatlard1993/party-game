@@ -1,0 +1,21 @@
+{
+  "name": "party-game",
+  "version": "0.1.0",
+  "description": "",
+  "main": "server/src",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "ava /server/test/**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fatlard1993/party-game.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fatlard1993/party-game/issues"
+  },
+  "homepage": "https://github.com/fatlard1993/party-game#readme"
+}
