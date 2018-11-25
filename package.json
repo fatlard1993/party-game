@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "description": "",
   "main": "server/src",
-  "dependencies": {},
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cookie-parser": "^1.4.3",
+    "polka": "^0.5.1",
+    "serve-static": "^1.13.2"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "ava /server/test/**/*.test.js"
