@@ -46,7 +46,7 @@ const App = Polka({
 			return res.redirect(307, err.redirectPath);
 		}
 
-		var file = Fs.readFileSync(Path.join(__dirname, '../../client/src', 'error.html'), 'utf8');
+		var file = Fs.readFileSync(Path.join(__dirname, '../../client/src/html', 'error.html'), 'utf8');
 
 		if(!file){
 			Log.error()('Unable to read error html file');
@@ -136,7 +136,7 @@ App.get('/test', function(req, res){
 App.use(StaticServer(PublicDir));
 
 App.get('/home', function(req, res){
-	res.sendFile(Path.join(PublicDir, 'index.html'));
+	res.sendFile(Path.join(PublicDir, 'html/index.html'));
 });
 
 module.exports = {

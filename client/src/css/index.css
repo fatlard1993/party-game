@@ -1,0 +1,18 @@
+div#status {
+	margin: 0 auto;
+	font-size: 42px;
+	text-align: center;
+}
+
+input#input {
+	font-size: 28px;
+	width: 90%;
+	margin: 5px auto;
+	display: block;
+}
+
+button#action {
+	font-size: 36px;
+	margin: 10px auto;
+	display: block;
+}

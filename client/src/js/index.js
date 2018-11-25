@@ -2,17 +2,20 @@ var Loaded = false;
 
 function Load(){
 	if(Loaded) return;
+
 	Loaded = true;
 
 	const ws = new WebSocket('ws://'+ location.host +'/api');
+
 	const gameStatus = document.getElementById('status');
 	const gameInput = document.getElementById('input');
 	const gameButton = document.getElementById('action');
+
 	var user = {};
 	var game = {};
 
-	ws.json = function(data){
-		ws.send(JSON.stringify(data));
+	ws.reply = function(type, payload){
+		ws.send(JSON.stringify({ type, payload }));
 	};
 
 	ws.addEventListener('open', function(evt){
@@ -20,7 +23,7 @@ function Load(){
 
 		gameStatus.textContent += '.';
 
-		ws.json({ type: 'knock', user: { id: localStorage.id } });
+		ws.reply('knock', localStorage.id);
 	});
 
 	ws.addEventListener('message', function(evt){
@@ -28,43 +31,40 @@ function Load(){
 
 		var data = JSON.parse(evt.data);
 
-		if(data.type === 'welcome'){
-			gameStatus.textContent = 'CONNECTED';
-			gameButton.textContent = 'START';
+		if(data.type === 'latencyCheck'){
+			// gameStatus.textContent = data.game.stage;
+			// gameButton.textContent = data.game.action;
 
-			localStorage.id = data.user.id;
-			user = data.user;
-			game = data.game;
+			// user = data.user;
+			// game = data.game;
 
-			ws.json({ type: 'latencyCheck' });
+			ws.reply('latencyCheck', user.id);
 		}
 
-		else if(data.type === 'gameOver'){
-			if(data.winner === user.id) gameStatus.textContent = 'WINNER';
-			else gameStatus.textContent = 'LOSER';
-
-			gameButton.textContent = 'RESTART';
-		}
-
-		else if(data.type === 'userState' && data.id === user.id){
-			user = Object.assign(user, data.state);
+		else if(data.type === 'userState'){
+			user = Object.assign(user, data.payload);
 
 			console.log(user);
 
+			if(user.id) localStorage.id = user.id;
+
 			if(user.gameTime){
-				gameStatus.textContent = (user.gameTime / 1000) +'s';
-				gameButton.textContent = '';
+				gameInput.value = (user.gameTime / 1000) +'s';
 			}
 		}
 
 		else if(data.type === 'gameState'){
-			game = Object.assign(game, data.state);
+			game = Object.assign(game, data.payload);
 
 			console.log(game);
 
-			if(data.state.ready){
-				gameStatus.textContent = 'READY';
-				gameButton.textContent = 'GO';
+			if(game.stage) gameStatus.textContent = game.stage;
+			if(game.action) gameButton.textContent = game.action === 'NONE' ? '' : game.action;
+
+			if(data.payload.stage && data.payload.stage === 'GAME OVER'){
+
+				// if(data.winner === user.id) gameStatus.textContent = 'WINNER';
+				// else gameStatus.textContent = 'LOSER';
 			}
 		}
 	});
@@ -72,16 +72,7 @@ function Load(){
 	function onPointerUp(evt){
 		console.log('onPointerUp', evt);
 
-		if(evt.target.id === 'action'){
-			if(evt.target.textContent === 'GO')	ws.json({ type: 'GO' });
-
-			else if({ START: 1, RESTART: 1 }[evt.target.textContent]){
-				ws.json({ type: evt.target.textContent });
-
-				gameStatus.textContent = 'WAITING';
-				gameButton.textContent = '';
-			}
-		}
+		if(evt.target.id === 'action') ws.reply('gameAction', { userId: user.id, action: evt.target.textContent });
 	}
 
 	document.addEventListener('click', onPointerUp);
