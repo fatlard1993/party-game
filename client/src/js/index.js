@@ -59,7 +59,7 @@ function Load(){
 			console.log(game);
 
 			if(game.stage) gameStatus.textContent = game.stage;
-			if(game.action) gameButton.textContent = game.action === 'NONE' ? 'WAIT ' : game.action;
+			if(game.action) gameButton.textContent = game.action;
 
 			if(data.payload.stage && data.payload.stage === 'GAME OVER'){
 

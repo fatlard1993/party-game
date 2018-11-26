@@ -19,7 +19,7 @@ module.exports = class TweakGame extends Game {
 
 		this.start = () => {
 			this.state.stage = 'STARTED';
-			this.state.action = 'NONE';
+			this.state.action = 'WAIT';
 
 			setTimeout(() => {
 				this.state.action = 'NOW';
@@ -53,12 +53,14 @@ module.exports = class TweakGame extends Game {
 		});
 
 		socketServer.on(Constants.USER_JOIN_GAME, (socket, userId) => {
-			Log.error()(userId);
+			userId = socket.id;
 
 			this.state.activeUserIds.push(userId);
 			++this.state.activeUsers;
 
 			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
+
+			UsersMap[userId].state.penalty = 0;
 
 			UsersMap[userId].state.latencyCheckStart = new Date().getTime();
 			socket.reply(Constants.USER_LATENCY_CHECK);
@@ -76,9 +78,17 @@ module.exports = class TweakGame extends Game {
 
 		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
 			if(action === 'NOW'){
-				UsersMap[socket.id].state.gameTime = (new Date().getTime() - UsersMap[socket.id].state.latency) - this.state.ready;
+				UsersMap[socket.id].state.gameTime = ((new Date().getTime() - UsersMap[socket.id].state.latency) - this.state.ready) + UsersMap[socket.id].state.penalty;
+
+				Log.info()('Score: ', UsersMap[socket.id].state.gameTime);
 
 				++this.state.usersDone;
+			}
+
+			else if(action === 'WAIT'){
+				UsersMap[socket.id].state.penalty += 100;
+
+				Log.error()('penalty: ', UsersMap[socket.id].state.penalty);
 			}
 
 			else if(action === 'START'){
@@ -87,6 +97,8 @@ module.exports = class TweakGame extends Game {
 
 			else if(action === 'RESET'){
 				this.reset();
+
+				UsersMap[socket.id].state.penalty = 0;
 			}
 		});
 
