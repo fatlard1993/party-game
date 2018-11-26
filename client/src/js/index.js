@@ -19,7 +19,7 @@ function Load(){
 	};
 
 	ws.addEventListener('open', function(evt){
-		console.log('Websocket connection open: ', evt);
+		// console.log('Websocket connection open: ', evt);
 
 		gameStatus.textContent += '.';
 
@@ -32,12 +32,6 @@ function Load(){
 		var data = JSON.parse(evt.data);
 
 		if(data.type === 'latencyCheck'){
-			// gameStatus.textContent = data.game.stage;
-			// gameButton.textContent = data.game.action;
-
-			// user = data.user;
-			// game = data.game;
-
 			ws.reply('latencyCheck');
 		}
 
@@ -48,8 +42,8 @@ function Load(){
 
 			if(user.id) localStorage.id = user.id;
 
-			if(user.gameTime){
-				gameInput.value = (user.gameTime / 1000) +'s';
+			if(user.score){
+				gameInput.value = (user.score / 1000) +'s';
 			}
 		}
 
@@ -62,7 +56,6 @@ function Load(){
 			if(game.action) gameButton.textContent = game.action;
 
 			if(data.payload.stage && data.payload.stage === 'GAME OVER'){
-
 				// if(data.winner === user.id) gameStatus.textContent = 'WINNER';
 				// else gameStatus.textContent = 'LOSER';
 			}
@@ -70,7 +63,7 @@ function Load(){
 	});
 
 	function onPointerUp(evt){
-		console.log('onPointerUp', evt);
+		// console.log('onPointerUp', evt);
 
 		if(evt.target.id === 'action') ws.reply('gameAction', evt.target.textContent);
 	}
