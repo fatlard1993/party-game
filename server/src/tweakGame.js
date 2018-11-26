@@ -1,5 +1,6 @@
-const { Game, User, Log, Cjs, Constants, UsersMap } = require('byod-game-engine');
+const { Game, Log, Cjs, Constants, UsersMap } = require('byod-game-engine');
 const localConstants = require('./constants');
+const TweakUser = require('./tweakUser');
 
 Object.assign(Constants, localConstants);
 
@@ -53,27 +54,37 @@ module.exports = class TweakGame extends Game {
 		});
 
 		socketServer.on(Constants.USER_JOIN_GAME, (socket, userId) => {
-			userId = socket.id;
+			let user;
 
-			this.state.activeUserIds.push(userId);
+			if(userId && UsersMap[userId]){
+				user = UsersMap[userId];
+				user.socket = socket;
+				user.id = socket.id = userId;
+				// Join existing game if still active
+
+				if(this.id === user.gameId) Log.info()('Users game is still active');
+			}
+
+			else user = new TweakUser(socketServer, socket, this);
+
+			socket.reply(Constants.USER_STATE_UPDATE, { id: user.id });
+
+			Log.info()(`User ${user.id} joined`);
+
+			socket.reply(Constants.USER_STATE_UPDATE, user.state);
+
+			this.state.activeUserIds.push(user.id);
 			++this.state.activeUsers;
 
 			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
 
-			UsersMap[userId].state.penalty = 0;
-
-			UsersMap[userId].state.latencyCheckStart = new Date().getTime();
-			socket.reply(Constants.USER_LATENCY_CHECK);
+			UsersMap[user.id].checkLatency();
 		});
 
 		socketServer.on(Constants.USER_DISCONNECT, (socket) => {
 			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
 
 			--this.state.activeUsers;
-		});
-
-		socketServer.on(Constants.USER_LATENCY_CHECK, (socket) => {
-			UsersMap[socket.id].state.latency = new Date().getTime() - UsersMap[socket.id].state.latencyCheckStart;
 		});
 
 		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
@@ -98,17 +109,11 @@ module.exports = class TweakGame extends Game {
 			else if(action === 'RESET'){
 				this.reset();
 
-				UsersMap[socket.id].state.penalty = 0;
+				UsersMap[socket.id].reset();
+				UsersMap[socket.id].checkLatency();
 			}
 		});
 
 		this.reset();
 	}
 };
-
-// clientConnection.on('disconnect', () => {
-// 	Log.warn()(`User ${user.id} left`);
-
-// 	delete game.users[user.state.id];
-// 	delete game.state[user.state.id];
-// });
