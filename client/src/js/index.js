@@ -38,7 +38,7 @@ function Load(){
 			// user = data.user;
 			// game = data.game;
 
-			ws.reply('latencyCheck', user.id);
+			ws.reply('latencyCheck');
 		}
 
 		else if(data.type === 'userState'){
@@ -72,7 +72,7 @@ function Load(){
 	function onPointerUp(evt){
 		console.log('onPointerUp', evt);
 
-		if(evt.target.id === 'action') ws.reply('gameAction', { userId: user.id, action: evt.target.textContent });
+		if(evt.target.id === 'action') ws.reply('gameAction', evt.target.textContent);
 	}
 
 	document.addEventListener('click', onPointerUp);

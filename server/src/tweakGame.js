@@ -31,15 +31,15 @@ module.exports = class TweakGame extends Game {
 		this.state.on('change', (event, property, value) => {
 			Log()('(tweakGame) Game state change - ', property, value);
 
-			if(property === 'usersDone' && value === this.state.activeUsers){
+			if(property === 'usersDone' && value >= this.state.activeUsers){
 				Log.info()('Game over');
 
 				var scores = [], scoreKey = {};
-				var userIDs = this.state.activeUserIds;
+				var userIds = this.state.activeUserIds;
 
 				for(var x = 0, count = this.state.activeUsers; x < count; ++x){
-					scores.push(UsersMap[userIDs[x]].state.gameTime);
-					scoreKey[UsersMap[userIDs[x]].state.gameTime] = userIDs[x];
+					scores.push(UsersMap[userIds[x]].state.gameTime);
+					scoreKey[UsersMap[userIds[x]].state.gameTime] = userIds[x];
 				}
 
 				Log()(scores, scoreKey);
@@ -70,6 +70,8 @@ module.exports = class TweakGame extends Game {
 				++this.state.activeUsers;
 			}
 
+			UsersMap[userId].socket.id = userId;
+
 			socket.reply(Constants.USER_STATE_UPDATE, { id: userId });
 
 			Log.info()(`User ${userId} joined`);
@@ -81,22 +83,28 @@ module.exports = class TweakGame extends Game {
 			socket.reply(Constants.USER_LATENCY_CHECK);
 		});
 
-		socketServer.on(Constants.USER_LATENCY_CHECK, (socket, userId) => {
-			UsersMap[userId].state.latency = new Date().getTime() - UsersMap[userId].state.latencyCheckStart;
+		socketServer.on(Constants.USER_DISCONNECT, (socket) => {
+			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
+
+			--this.state.activeUsers;
 		});
 
-		socketServer.on(Constants.USER_GAME_ACTION, (socket, payload) => {
-			if(payload.action === 'NOW'){
-				UsersMap[payload.userId].state.gameTime = (new Date().getTime() - UsersMap[payload.userId].state.latency) - this.state.ready;
+		socketServer.on(Constants.USER_LATENCY_CHECK, (socket) => {
+			UsersMap[socket.id].state.latency = new Date().getTime() - UsersMap[socket.id].state.latencyCheckStart;
+		});
+
+		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
+			if(action === 'NOW'){
+				UsersMap[socket.id].state.gameTime = (new Date().getTime() - UsersMap[socket.id].state.latency) - this.state.ready;
 
 				++this.state.usersDone;
 			}
 
-			else if(payload.action === 'START'){
+			else if(action === 'START'){
 				this.start();
 			}
 
-			else if(payload.action === 'RESET'){
+			else if(action === 'RESET'){
 				this.reset();
 			}
 		});
