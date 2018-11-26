@@ -12,6 +12,8 @@ module.exports = class TweakUser extends User {
 		this.reset = () => {
 			this.state.score = 0;
 			this.state.penalty = 0;
+
+			this.checkLatency();
 		};
 
 		this.checkLatency = () => {
