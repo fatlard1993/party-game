@@ -53,31 +53,12 @@ module.exports = class TweakGame extends Game {
 		});
 
 		socketServer.on(Constants.USER_JOIN_GAME, (socket, userId) => {
-			let user;
+			Log.error()(userId);
 
-			if(userId && UsersMap[userId]){
-				user = UsersMap[userId];
-				user.socket = socket;
-				user.id = userId;
-				// Join existing game if still active
-			}
-
-			else{
-				user = new User(socketServer, socket);
-
-				userId = user.id;
-				this.state.activeUserIds.push(userId);
-				++this.state.activeUsers;
-			}
-
-			UsersMap[userId].socket.id = userId;
-
-			socket.reply(Constants.USER_STATE_UPDATE, { id: userId });
-
-			Log.info()(`User ${userId} joined`);
+			this.state.activeUserIds.push(userId);
+			++this.state.activeUsers;
 
 			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
-			socket.reply(Constants.USER_STATE_UPDATE, user.state);
 
 			UsersMap[userId].state.latencyCheckStart = new Date().getTime();
 			socket.reply(Constants.USER_LATENCY_CHECK);
