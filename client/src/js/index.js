@@ -55,9 +55,9 @@ function Load(){
 			if(game.stage) gameStatus.textContent = game.stage;
 			if(game.action) gameButton.textContent = game.action;
 
-			if(data.payload.stage && data.payload.stage === 'GAME OVER'){
-				// if(data.winner === user.id) gameStatus.textContent = 'WINNER';
-				// else gameStatus.textContent = 'LOSER';
+			if(game.winner){
+				if(game.winner === user.id) gameStatus.textContent = 'WINNER';
+				else gameStatus.textContent = 'LOSER';
 			}
 		}
 	});

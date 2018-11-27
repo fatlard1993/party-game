@@ -11,6 +11,7 @@ module.exports = class TweakGame extends Game {
 		this.name = 'TweakGame';
 
 		this.reset = () => {
+			this.state.winner = '';
 			this.state.activeUserIds = [];
 			this.state.activeUsers = 0;
 			this.state.usersDone = 0;
@@ -43,10 +44,11 @@ module.exports = class TweakGame extends Game {
 					scoreKey[UsersMap[userIds[x]].state.score] = userIds[x];
 				}
 
-				Log()(scores, scoreKey);
-
 				this.state.scores = scores;
 				this.state.scoreKey = scoreKey;
+				this.state.winner = scoreKey[scores[0]];
+
+				Log.info()(`Winner: ${this.state.winner}`);
 
 				this.state.action = 'RESET';
 				this.state.stage = 'GAME OVER';
