@@ -13,7 +13,6 @@ module.exports = class TweakGame extends Game {
 		this.reset = () => {
 			this.state.winner = '';
 			this.state.activeUserIds = [];
-			this.state.activeUsers = 0;
 			this.state.usersDone = 0;
 			this.state.action = 'START';
 			this.state.stage = 'WAITING';
@@ -33,13 +32,13 @@ module.exports = class TweakGame extends Game {
 		this.state.on('change', (event, property, value) => {
 			Log()('(tweakGame) Game state change - ', property, value);
 
-			if(property === 'usersDone' && value >= this.state.activeUsers){
+			if(property === 'usersDone' && value >= this.state.activeUserIds.length){
 				Log.info()('Game over');
 
 				var scores = [], scoreKey = {};
 				var userIds = this.state.activeUserIds;
 
-				for(var x = 0, count = this.state.activeUsers; x < count; ++x){
+				for(var x = 0, count = this.state.activeUserIds.length; x < count; ++x){
 					scores.push(UsersMap[userIds[x]].state.score);
 					scoreKey[UsersMap[userIds[x]].state.score] = userIds[x];
 				}
@@ -61,30 +60,26 @@ module.exports = class TweakGame extends Game {
 			if(userId && UsersMap[userId]){
 				user = UsersMap[userId];
 				user.socket = socket;
-				user.id = socket.id = userId;
-				// Join existing game if still active
+				user.socket.id = userId;
 
+				// Join existing game if still active
 				if(this.id === user.gameId) Log.info()('Users game is still active');
 			}
 
 			else user = new TweakUser(socketServer, socket, this);
 
 			socket.reply(Constants.USER_STATE_UPDATE, { id: user.id });
-
-			Log.info()(`User ${user.id} joined`);
-
 			socket.reply(Constants.USER_STATE_UPDATE, user.state);
 
 			this.state.activeUserIds.push(user.id);
-			++this.state.activeUsers;
+
+			Log.info()(`User ${user.id} joined`);
 
 			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
 		});
 
 		socketServer.on(Constants.USER_DISCONNECT, (socket) => {
 			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
-
-			--this.state.activeUsers;
 		});
 
 		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
