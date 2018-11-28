@@ -139,6 +139,12 @@ App.get('/home', function(req, res){
 	res.sendFile(Path.join(PublicDir, 'html/index.html'));
 });
 
+App.get('/game/:gameName', function(req, res, next){
+	if(!{ tweak: 1, mindMaze: 1 }[req.params.gameName]) return next({ code: 404 });
+
+	res.sendFile(Path.join(PublicDir, `html/${req.params.gameName}.html`));
+});
+
 module.exports = {
 	init: function(port){
 		App.listen(port);

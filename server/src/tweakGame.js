@@ -8,7 +8,7 @@ module.exports = class TweakGame extends Game {
 	constructor(socketServer){
 		super(socketServer);
 
-		this.name = 'TweakGame';
+		this.name = 'Tweak';
 
 		this.reset = () => {
 			this.state.winner = '';
@@ -32,7 +32,7 @@ module.exports = class TweakGame extends Game {
 		this.state.on('change', (event, property, value) => {
 			Log()('(tweakGame) Game state change - ', property, value);
 
-			if(property === 'usersDone' && value >= this.state.activeUserIds.length){
+			if(property === 'usersDone' && value && value >= this.state.activeUserIds.length){
 				Log.info()('Game over');
 
 				var scores = [], scoreKey = {};
