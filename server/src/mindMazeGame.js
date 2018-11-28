@@ -13,13 +13,14 @@ module.exports = class MindMazeGame extends Game {
 		this.reset = () => {
 			this.state.winner = '';
 			this.state.activeUserIds = [];
-			this.state.usersReady = 0;
 			this.state.gridSize = 0;
-			this.state.stage = 'WAITING';
+			this.state.stage = 'WAITING ROOM';
+			this.state.action = 'START';
 		};
 
 		this.start = () => {
 			this.state.stage = 'SET PATH';
+			this.state.action = 'DONE';
 
 			this.state.gridSize = this.state.activeUserIds.length <= 8 ? 5 : (this.state.activeUserIds.length <= 12 ? 7 : 9);
 
@@ -45,18 +46,19 @@ module.exports = class MindMazeGame extends Game {
 			}
 		};
 
-		this.state.on('change', (event, property, value) => {
-			Log()('(tweakGame) Game state change - ', property, value);
+		// this.state.on('change', (event, property, value) => {
+		// 	Log()('(tweakGame) Game state change - ', property, value);
 
-			if(property === 'usersReady' && value && value >= this.state.activeUserIds.length){
-				this.state.stage = 'RACE';
+		// 	if(property === 'usersReady' && value && value >= this.state.activeUserIds.length){
+		// 		this.state.stage = 'RACE';
+		// 		this.state.action = 'WAIT';
 
-				Log.info()('Begin Race!');
+		// 		Log.info()('Begin Race!');
 
-				//todo move each player turn by turn until they reach the center or collide with another player
-				//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)
-			}
-		});
+		// 		//todo move each player turn by turn until they reach the center or collide with another player
+		// 		//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)
+		// 	}
+		// });
 
 		socketServer.on(Constants.USER_JOIN_GAME, (socket, userId) => {
 			let user;
@@ -77,6 +79,8 @@ module.exports = class MindMazeGame extends Game {
 
 			this.state.activeUserIds.push(user.id);
 
+			if(this.state.stage.startsWith('WAITING ROOM')) this.state.stage = `WAITING ROOM - ${this.state.activeUserIds.length} PLAYER${this.state.activeUserIds.length > 1 ? 'S' : ''}`;
+
 			Log.info()(`User ${user.id} joined`);
 
 			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
@@ -87,8 +91,42 @@ module.exports = class MindMazeGame extends Game {
 		});
 
 		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
-			if(action === 'READY'){
-				Log.info()(`Player #${socket.id} is ready`);
+			var userIds = this.state.activeUserIds, x, totalUsers = userIds.length;
+
+			if(action === 'START'){
+				UsersMap[socket.id].state.ready = true;
+
+				Log.info()(`Player #${socket.id} is ready to start`);
+
+				var allUsersReady = true;
+
+				for(x = 0; x < totalUsers; ++x){
+					if(!UsersMap[userIds[x]].state.ready) allUsersReady = false;
+				}
+
+				if(allUsersReady) this.start();
+			}
+
+			else if(action === 'DONE'){
+				UsersMap[socket.id].state.done = true;
+
+				Log.info()(`Player #${socket.id} is done setting their path`);
+
+				var allUsersDone = true;
+
+				for(x = 0; x < totalUsers; ++x){
+					if(!UsersMap[userIds[x]].state.done) allUsersDone = false;
+				}
+
+				if(allUsersDone){
+					this.state.stage = 'RACE';
+					this.state.action = 'WAIT';
+
+					Log.info()('Begin Race!');
+
+					//todo move each player turn by turn until they reach the center or collide with another player
+					//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)
+				}
 			}
 		});
 

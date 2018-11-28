@@ -8,8 +8,8 @@ function Load(){
 	const ws = new WebSocket('ws://'+ location.host +'/api');
 
 	const gameStatus = document.getElementById('status');
-	const gameGrid = document.getElementById('gird');
-	const gameReadyButton = document.getElementById('ready');
+	const gameGrid = document.getElementById('grid');
+	const gameAction = document.getElementById('action');
 
 	var user = {};
 	var game = {};
@@ -53,9 +53,18 @@ function Load(){
 			console.log(game);
 
 			if(game.stage) gameStatus.textContent = game.stage;
+			if(game.action) gameAction.textContent = game.action;
 
 			if(data.payload.gridSize){
-				//todo draw grid
+				var gridPxSize = Math.min(600, Math.round(document.body.clientWidth * 0.8));
+
+				gameGrid.style.width = gameGrid.style.height = gridPxSize +'px';
+
+				for(var x = 0, count = (game.gridSize * game.gridSize); x < count; ++x){
+					var gridPoint = document.createElement('div');
+					gridPoint.style.width = gridPoint.style.height = (gridPxSize / game.gridSize) +'px';
+					gameGrid.appendChild(gridPoint);
+				}
 			}
 
 			if(game.winner){
@@ -68,7 +77,7 @@ function Load(){
 	function onPointerUp(evt){
 		// console.log('onPointerUp', evt);
 
-		if(evt.target.id === 'ready') ws.reply('gameAction', 'READY');
+		if(evt.target.id === 'action') ws.reply('gameAction', evt.target.textContent);
 	}
 
 	document.addEventListener('click', onPointerUp);

@@ -4,6 +4,20 @@ div#status {
 	text-align: center;
 }
 
+div#grid {
+	margin: 0 auto;
+	border: 1px solid;
+}
+
+div#grid div {
+	background: radial-gradient(#333 1%, #fff);
+	float: left;
+}
+
+div#grid div:hover {
+	background: radial-gradient(#457 3%, #fff);
+}
+
 button {
 	font-size: 36px;
 	margin: 10px auto;
