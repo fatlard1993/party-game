@@ -22,18 +22,26 @@ module.exports = class MindMazeGame extends Game {
 			this.state.stage = 'SET PATH';
 			this.state.action = 'DONE';
 
-			this.state.gridSize = this.state.activeUserIds.length <= 8 ? 5 : (this.state.activeUserIds.length <= 12 ? 7 : 9);
+			var userCount = this.state.activeUserIds.length;
+
+			this.state.gridSize = userCount <= 4 ? 4 : (userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9));
 
 			var startingPositions = {
+				'4': [
+					{ x: 1, y: 0 },
+					{ x: 0, y: 2 },
+					{ x: 3, y: 1 },
+					{ x: 2, y: 3 }
+				],
 				'5': [
 					{ x: 1, y: 0 },
 					{ x: 3, y: 0 },
+					{ x: 1, y: 4 },
+					{ x: 3, y: 4 },
 					{ x: 0, y: 1 },
 					{ x: 0, y: 3 },
-					{ x: 3, y: 1 },
-					{ x: 3, y: 3 },
-					{ x: 1, y: 3 },
-					{ x: 3, y: 3 }
+					{ x: 4, y: 1 },
+					{ x: 4, y: 3 }
 				]
 			};
 
