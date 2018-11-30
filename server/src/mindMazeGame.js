@@ -24,15 +24,9 @@ module.exports = class MindMazeGame extends Game {
 
 			var userCount = this.state.activeUserIds.length;
 
-			this.state.gridSize = userCount <= 4 ? 4 : (userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9));
+			this.state.gridSize = userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9);
 
 			var startingPositions = {
-				'4': [
-					{ x: 1, y: 0 },
-					{ x: 0, y: 2 },
-					{ x: 3, y: 1 },
-					{ x: 2, y: 3 }
-				],
 				'5': [
 					{ x: 1, y: 0 },
 					{ x: 3, y: 0 },
@@ -42,6 +36,38 @@ module.exports = class MindMazeGame extends Game {
 					{ x: 0, y: 3 },
 					{ x: 4, y: 1 },
 					{ x: 4, y: 3 }
+				],
+				'7': [
+					{ x: 1, y: 0 },
+					{ x: 3, y: 0 },
+					{ x: 5, y: 0 },
+					{ x: 1, y: 4 },
+					{ x: 3, y: 4 },
+					{ x: 5, y: 4 },
+					{ x: 0, y: 1 },
+					{ x: 0, y: 3 },
+					{ x: 0, y: 5 },
+					{ x: 4, y: 1 },
+					{ x: 4, y: 3 },
+					{ x: 4, y: 5 }
+				],
+				'9': [
+					{ x: 1, y: 0 },
+					{ x: 3, y: 0 },
+					{ x: 5, y: 0 },
+					{ x: 7, y: 0 },
+					{ x: 1, y: 4 },
+					{ x: 3, y: 4 },
+					{ x: 5, y: 4 },
+					{ x: 7, y: 4 },
+					{ x: 0, y: 1 },
+					{ x: 0, y: 3 },
+					{ x: 0, y: 5 },
+					{ x: 0, y: 7 },
+					{ x: 4, y: 1 },
+					{ x: 4, y: 3 },
+					{ x: 4, y: 5 },
+					{ x: 4, y: 7 }
 				]
 			};
 
