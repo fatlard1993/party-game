@@ -13,6 +13,8 @@ module.exports = class MindMazeGame extends Game {
 		this.reset = () => {
 			this.state.winner = '';
 			this.state.activeUserIds = [];
+			this.state.map = [];
+			this.state.mapUpdate = 0;
 			this.state.gridSize = 0;
 			this.state.stage = 'WAITING ROOM';
 			this.state.action = 'START';
@@ -25,6 +27,8 @@ module.exports = class MindMazeGame extends Game {
 			var userCount = this.state.activeUserIds.length;
 
 			this.state.gridSize = userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9);
+
+			this.generateMap(this.state.gridSize);
 
 			var startingPositions = {
 				'5': [
@@ -77,22 +81,44 @@ module.exports = class MindMazeGame extends Game {
 
 			for(var x = 0, count = userIds.length; x < count; ++x){
 				UsersMap[userIds[x]].state.startingPosition = startingPositions[this.state.gridSize][x];
+
+				this.updateMap(UsersMap[userIds[x]].state.startingPosition, userIds[x]);
 			}
+
+			++this.state.mapUpdate;
 		};
 
-		// this.state.on('change', (event, property, value) => {
-		// 	Log()('(tweakGame) Game state change - ', property, value);
+		this.stepUsers = (step) => {
+			var userIds = this.state.activeUserIds, x, totalUsers = userIds.length;
 
-		// 	if(property === 'usersReady' && value && value >= this.state.activeUserIds.length){
-		// 		this.state.stage = 'RACE';
-		// 		this.state.action = 'WAIT';
+			for(x = 0; x < totalUsers; ++x){
+				this.updateMap(UsersMap[userIds[x]].state.steps[step], userIds[x]);
+			}
 
-		// 		Log.info()('Begin Race!');
+			++this.state.mapUpdate;
+		};
 
-		// 		//todo move each player turn by turn until they reach the center or collide with another player
-		// 		//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)
-		// 	}
-		// });
+		this.generateMap = (size) => {
+			for(var x = 0; x < size; ++x){
+				this.state.map[x] = [];
+
+				for(var y = 0; y < size; ++y) this.state.map[x][y] = 0;
+			}
+
+			++this.state.mapUpdate;
+		};
+
+		this.updateMap = (position, property) => {
+			this.state.map[position.x][position.y] = property;
+		};
+
+		this.state.on('change', (event, property, value) => {
+			Log()('(mindMaze) Game state change - ', property, value);
+
+			if(property === 'mapUpdate'){
+				socketServer.broadcast('gameState', { map: this.state.map });
+			}
+		});
 
 		socketServer.on(Constants.USER_JOIN_GAME, (socket, userId) => {
 			let user;
@@ -122,6 +148,10 @@ module.exports = class MindMazeGame extends Game {
 
 		socketServer.on(Constants.USER_DISCONNECT, (socket) => {
 			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
+		});
+
+		socketServer.on(Constants.USER_SET_STEP, (socket) => {
+
 		});
 
 		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
@@ -157,6 +187,8 @@ module.exports = class MindMazeGame extends Game {
 					this.state.action = 'WAIT';
 
 					Log.info()('Begin Race!');
+
+
 
 					//todo move each player turn by turn until they reach the center or collide with another player
 					//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)

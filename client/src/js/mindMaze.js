@@ -11,9 +11,7 @@ function Load(){
 	const gameGrid = document.getElementById('grid');
 	const gameAction = document.getElementById('action');
 
-	var user = {
-		moves: []
-	};
+	var user = {};
 	var game = {};
 
 	function clearNextHighlights(){
@@ -48,14 +46,14 @@ function Load(){
 	});
 
 	ws.addEventListener('message', function(evt){
-		console.log('Message from server: ', evt.data);
+		// console.log('Message from server: ', evt.data);
 
 		var data = JSON.parse(evt.data);
 
 		if(data.type === 'userState'){
 			user = Object.assign(user, data.payload);
 
-			console.log(user);
+			console.log('userState', data.payload);
 
 			if(user.id) localStorage.id = user.id;
 
@@ -64,48 +62,53 @@ function Load(){
 			}
 
 			if(game.gridSize && data.payload.startingPosition){
-				gameGrid.children[user.startingPosition.x + (user.startingPosition.y * game.gridSize)].className = 'start';
+				// game.grid[user.startingPosition.x][user.startingPosition.y].className = 'start';
 
-				highlightNextSpaces(user.startingPosition);
+				// highlightNextSpaces(user.startingPosition);
 			}
 		}
 
 		else if(data.type === 'gameState'){
 			game = Object.assign(game, data.payload);
 
-			console.log(game);
+			console.log('gameState', data.payload);
 
 			if(game.stage) gameStatus.textContent = game.stage;
 			if(game.action) gameAction.textContent = game.action;
 
-			if(data.payload.gridSize){
+			if(data.payload.map && game.map.length){
 				var gridPxSize = Math.min(600, Math.round(document.body.clientWidth * 0.8));
 
 				gameGrid.style.width = gameGrid.style.height = gridPxSize +'px';
 
-				game.grid = [];
+				game.grid = game.grid || [];
 
-				for(var y = 0, yCount = game.gridSize; y < yCount; ++y){
-					for(var x = 0, xCount = game.gridSize; x < xCount; ++x){
-						game.grid[x] = game.grid[x] || [];
+				for(var y = 0; y < game.gridSize; ++y) for(var x = 0; x < game.gridSize; ++x){
+					game.grid[x] = game.grid[x] || [];
 
-						var gridPoint = document.createElement('div');
+					var gridPoint = game.grid[x][y];
+
+					if(!gridPoint){
+						gridPoint = document.createElement('div');
 						gridPoint.style.width = gridPoint.style.height = (gridPxSize / game.gridSize) +'px';
 						gameGrid.appendChild(gridPoint);
-
 						gridPoint.setAttribute('position', x +' '+ y);
-
-						game.grid[x][y] = gridPoint;
 					}
+
+					if(game.map[x][y] !== 0){
+						if(game.map[x][y] === user.id){
+							gridPoint.className = 'start';
+						}
+
+						else gridPoint.textContent = game.map[x][y];
+					}
+
+					game.grid[x][y] = gridPoint;
 				}
 
-				game.grid[Math.floor(game.gridSize / 2)][Math.floor(game.gridSize / 2)].className = 'goal';
+				highlightNextSpaces(user.startingPosition);
 
-				if(user.startingPosition){
-					game.grid[user.startingPosition.x][user.startingPosition.y].className = 'start';
-
-					highlightNextSpaces(user.startingPosition);
-				}
+				// game.grid[Math.floor(game.gridSize / 2)][Math.floor(game.gridSize / 2)].className = 'goal';
 			}
 
 			if(game.winner){
@@ -126,8 +129,7 @@ function Load(){
 			var position = evt.target.getAttribute('position').split(' ');
 			position = { x: parseInt(position[0]), y: parseInt(position[1]) };
 
-			user.moves.push(position);//todo replace with server side tracking
-			ws.reply('userSetMove', position);
+			ws.reply('userSetStep', position);
 
 			highlightNextSpaces(position);
 		}
