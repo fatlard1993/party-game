@@ -14,10 +14,6 @@ class MindMazeGame extends Game {
 			if(property === 'mapUpdate'){
 				socketServer.broadcast('gameState', { map: this.state.map });
 			}
-
-			else if(property === 'raceMapUpdate'){
-				socketServer.broadcast('gameState', { map: this.state.raceMap });
-			}
 		});
 
 		this.on(Constants.USER_JOIN_GAME, (socket, { userId, gameId }) => {
@@ -98,9 +94,7 @@ MindMazeGame.prototype.reset = function(){
 	this.state.winner = '';
 	this.state.activeUserIds = [];
 	this.state.map = [];
-	this.state.raceMap = [];
 	this.state.mapUpdate = 0;
-	this.state.raceMapUpdate = 0;
 	this.state.gridSize = 0;
 	this.state.maxSteps = 0;
 	this.state.stage = Constants.GAME_STAGE_WAITING_ROOM;
@@ -176,8 +170,6 @@ MindMazeGame.prototype.start = function(){
 	}
 
 	this.generateMap(this.state.gridSize);
-
-	++this.state.mapUpdate;
 };
 
 MindMazeGame.prototype.race = function(step){
@@ -185,7 +177,7 @@ MindMazeGame.prototype.race = function(step){
 		this.state.stage = Constants.GAME_STAGE_RACE;
 		this.state.action = Constants.GAME_ACTION_WAIT;
 
-		++this.state.raceMapUpdate;
+		++this.state.mapUpdate;
 
 		Log.info()('Begin Race!');
 
@@ -213,7 +205,7 @@ MindMazeGame.prototype.stepUsers = function(step){
 			continue;
 		}
 
-		this.updateRaceMap(UsersMap[userIds[x]].state.steps[step], UsersMap[userIds[x]].state.color);
+		this.updateMap(UsersMap[userIds[x]].state.steps[step], UsersMap[userIds[x]].state.color);
 
 		for(y = 0; y < totalUsers; ++y){
 			if(x !== y && UsersMap[userIds[y]].state.steps[step] && UsersMap[userIds[x]].state.steps[step].x === UsersMap[userIds[y]].state.steps[step].x && UsersMap[userIds[x]].state.steps[step].y === UsersMap[userIds[y]].state.steps[step].y){
@@ -221,12 +213,12 @@ MindMazeGame.prototype.stepUsers = function(step){
 				UsersMap[userIds[x]].state.stopped = true;
 				UsersMap[userIds[y]].state.stopped = true;
 
-				this.updateRaceMap(UsersMap[userIds[x]].state.steps[step], 'hsl(0, 0%, 0%)');
+				this.updateMap(UsersMap[userIds[x]].state.steps[step], 'hsl(0, 0%, 0%)');
 			}
 		}
 	}
 
-	++this.state.raceMapUpdate;
+	++this.state.mapUpdate;
 
 	return keepGoing;
 };
@@ -234,11 +226,9 @@ MindMazeGame.prototype.stepUsers = function(step){
 MindMazeGame.prototype.generateMap = function(size){
 	for(var x = 0; x < size; ++x){
 		this.state.map[x] = [];
-		this.state.raceMap[x] = [];
 
 		for(var y = 0; y < size; ++y){
 			this.state.map[x][y] = 0;
-			this.state.raceMap[x][y] = 0;
 		}
 	}
 
@@ -247,12 +237,6 @@ MindMazeGame.prototype.generateMap = function(size){
 
 MindMazeGame.prototype.updateMap = function(position, property){
 	this.state.map[position.x][position.y] = property;
-};
-
-MindMazeGame.prototype.updateRaceMap = function(position, property){
-	Log.warn()('updateRaceMap', position, property);
-
-	this.state.raceMap[position.x][position.y] = property;
 };
 
 module.exports = MindMazeGame;
