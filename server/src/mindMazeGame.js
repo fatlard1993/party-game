@@ -195,12 +195,27 @@ MindMazeGame.prototype.race = function(step){
 MindMazeGame.prototype.stepUsers = function(step){
 	Log()('stepUsers: ', step);
 
-	var userIds = this.state.activeUserIds, x, totalUsers = userIds.length, keepGoing = true;
+	var userIds = this.state.activeUserIds, x, y, totalUsers = userIds.length, keepGoing = true;
 
 	for(x = 0; x < totalUsers; ++x){
+		if(UsersMap[userIds[x]].state.stopped){
+			keepGoing = false;
+			continue;
+		}
+
 		if(!UsersMap[userIds[x]].state.steps[step]) keepGoing = false;
 
-		else this.updateRaceMap(UsersMap[userIds[x]].state.steps[step], userIds[x]);
+		else this.updateRaceMap(UsersMap[userIds[x]].state.steps[step], UsersMap[userIds[x]].state.color);
+
+		for(y = 0; y < totalUsers; ++y){
+			if(x !== y && UsersMap[userIds[x]].state.steps[step].x === UsersMap[userIds[y]].state.steps[step].x && UsersMap[userIds[x]].state.steps[step].y === UsersMap[userIds[y]].state.steps[step].y){
+				keepGoing = false;
+				UsersMap[userIds[x]].state.stopped = true;
+				UsersMap[userIds[y]].state.stopped = true;
+
+				this.updateRaceMap(UsersMap[userIds[x]].state.steps[step], 'hsl(0, 0%, 0%)');
+			}
+		}
 	}
 
 	++this.state.raceMapUpdate;

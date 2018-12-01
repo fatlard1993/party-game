@@ -101,6 +101,8 @@ function Load(){
 							gridPoint.style.backgroundColor = user.color;
 						}
 
+						else if(game.map[x][y].startsWith('hsl')) gridPoint.style.backgroundColor = game.map[x][y];
+
 						else{
 							gridPoint.textContent = game.map[x][y];
 						}
