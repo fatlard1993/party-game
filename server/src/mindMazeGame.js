@@ -1,59 +1,36 @@
-const { Game, Log, Cjs, Constants, UsersMap } = require('byod-game-engine');
-const localConstants = require('./constants');
+const { Game, Log, Cjs, UsersMap } = require('byod-game-engine');
+const Constants = require('./constants');
 const MindMazeUser = require('./mindMazeUser');
-
-Object.assign(Constants, localConstants);
 
 class MindMazeGame extends Game {
 	constructor(socketServer){
 		super(socketServer);
 
+		this.name = 'mindMaze';
+		this.user = MindMazeUser;
+
+		this.reset();
+
 		this.state.on('change', (event, property, value) => {
 			Log()('(mindMaze) Game state change - ', property, value);
 
 			if(property === 'mapUpdate'){
-				socketServer.broadcast('gameState', { map: this.state.map });
+				this.broadcast('gameState', { map: this.state.map });
 			}
 		});
 
-		this.on(Constants.USER_JOIN_GAME, (socket, { userId, gameId }) => {
-			let user;
-
-			// Join existing game if still active
-			if(this.id === gameId) Log.info()('Users game is still active');
-
-			if(userId && UsersMap[userId]){
-				user = UsersMap[userId];
-				user.socket = socket;
-				user.socket.id = userId;
-			}
-
-			else user = new MindMazeUser(socketServer, socket, this);
-
-			socket.reply(Constants.USER_STATE_UPDATE, { id: user.id });
-			socket.reply(Constants.USER_STATE_UPDATE, user.state);
-
-			this.state.activeUserIds.push(user.id);
-
-			if(this.state.stage.startsWith('WAITING ROOM')) this.state.stage = `WAITING ROOM - ${this.state.activeUserIds.length} PLAYER${this.state.activeUserIds.length > 1 ? 'S' : ''}`;
-
-			Log.info()(`User ${user.id} joined`);
-
-			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
+		this.on(Constants.USER_JOIN_GAME, () => {
+			if(this.state.stage.startsWith('WAITING ROOM')) this.state.stage = `WAITING ROOM - ${this.state.userCount} PLAYER${this.state.userCount > 1 ? 'S' : ''}`;
 		});
 
-		this.on(Constants.USER_DISCONNECT, (socket) => {
-			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
-		});
-
-		this.on(Constants.USER_SET_STEP, (socket, position) => {
+		this.on(Constants.USER_SET_STEP, (position, socket) => {
 			UsersMap[socket.id].state.steps.push(position);
 
 			this.state.maxSteps = Math.max(this.state.maxSteps, UsersMap[socket.id].state.steps.length);
 		});
 
-		this.on(Constants.USER_GAME_ACTION, (socket, action) => {
-			var userIds = this.state.activeUserIds, x, totalUsers = userIds.length;
+		this.on(Constants.USER_GAME_ACTION, (action, socket) => {
+			var x;
 
 			if(action === Constants.USER_ACTION_START){
 				UsersMap[socket.id].state.ready = true;
@@ -62,8 +39,8 @@ class MindMazeGame extends Game {
 
 				var allUsersReady = true;
 
-				for(x = 0; x < totalUsers; ++x){
-					if(!UsersMap[userIds[x]].state.ready) allUsersReady = false;
+				for(x = 0; x < this.state.userCount; ++x){
+					if(!UsersMap[this.userIds[x]].state.ready) allUsersReady = false;
 				}
 
 				if(allUsersReady) this.start();
@@ -76,37 +53,42 @@ class MindMazeGame extends Game {
 
 				var allUsersDone = true;
 
-				for(x = 0; x < totalUsers; ++x){
-					if(!UsersMap[userIds[x]].state.done) allUsersDone = false;
+				for(x = 0; x < this.state.userCount; ++x){
+					if(!UsersMap[this.userIds[x]].state.done) allUsersDone = false;
 				}
 
 				if(allUsersDone) this.race();
 			}
 		});
-
-		this.name = 'mindMaze';
-
-		this.reset();
 	}
 }
 
 MindMazeGame.prototype.reset = function(){
+	this.users = {};
+	this.userIds = [];
+
 	this.state.winner = '';
-	this.state.activeUserIds = [];
+	this.state.userCount = 0;
 	this.state.map = [];
 	this.state.mapUpdate = 0;
 	this.state.gridSize = 0;
 	this.state.maxSteps = 0;
 	this.state.stage = Constants.GAME_STAGE_WAITING_ROOM;
 	this.state.action = Constants.GAME_ACTION_START;
+
+	for(var x = 0; x < this.state.userCount; ++x){
+		UsersMap[this.userIds[x]].state.steps = [];
+		UsersMap[this.userIds[x]].state.startingPosition = null;
+		UsersMap[this.userIds[x]].state.stopped = false;
+	}
 };
 
 MindMazeGame.prototype.start = function(){
 	this.state.stage = Constants.GAME_STAGE_SET_PATH;
 	this.state.action = Constants.GAME_ACTION_DONE;
 
-	var userIds = this.state.activeUserIds;
-	var userCount = userIds.length;
+	var userIds = this.userIds;
+	var userCount = this.state.userCount;
 
 	this.state.gridSize = userCount <= 4 ? 3 : (userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9));
 
@@ -197,7 +179,7 @@ MindMazeGame.prototype.race = function(step){
 MindMazeGame.prototype.stepUsers = function(step){
 	Log()('stepUsers: ', step);
 
-	var userIds = this.state.activeUserIds, x, y, totalUsers = userIds.length, keepGoing = true;
+	var userIds = this.userIds, x, y, totalUsers = this.state.userCount, keepGoing = true;
 
 	for(x = 0; x < totalUsers; ++x){
 		if(UsersMap[userIds[x]].state.stopped || !UsersMap[userIds[x]].state.steps[step]){

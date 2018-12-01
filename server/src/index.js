@@ -1,6 +1,7 @@
-const { SocketServer, Log } = require('byod-game-engine');
+const { SocketServer } = require('byod-game-engine');
 const TweakGame = require('./tweakGame');
 const MindMazeGame = require('./mindMazeGame');
+const Constants = require('./constants');
 
 const PORT = process.env.PORT || 8080;
 
@@ -9,22 +10,19 @@ const socketServer = new SocketServer({ server });
 
 var games = {
 	mindMazeTest: new MindMazeGame(socketServer),
-	// mindMazeTestNumberTwo: new MindMazeGame(socketServer),
-	// tweakTest: new TweakGame(socketServer)
+	mindMazeTestNumberTwo: new MindMazeGame(socketServer),
+	tweakTest: new TweakGame(socketServer)
 };
 
-socketServer.on('clientMessage', (socket, data) => {
-	Log()('(index) Client socket message: ', data.type, data.payload);
+socketServer.createEndpoint(Constants.GAMES_LIST, function(){
+	return Object.keys(games).reduce((map, name) => {
+		map[name] = {
+			game: games[name].name,
+			id: games[name].id
+		};
 
-	if(data.type === 'gamesList'){
-		var gamesList = {}, gameNames = Object.keys(games), gameCount = gameNames.length;
-
-		for(var x = 0; x < gameCount; ++x){
-			gamesList[gameNames[x]] = { game: games[gameNames[x]].name, id: games[gameNames[x]].id };
-		}
-
-		socket.reply('gamesList', gamesList);
-	}
+		return map;
+	}, {});
 });
 
 //serve room selection files to connecting clients

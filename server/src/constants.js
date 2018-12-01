@@ -1,7 +1,10 @@
-module.exports = {
+const { Constants } = require('byod-game-engine');
+
+module.exports = Object.assign(Constants, {
   USER_SET_STEP: 'userSetStep',
   USER_LATENCY_CHECK: 'latencyCheck',
 	USER_GAME_ACTION: 'gameAction',
+	GAMES_LIST: 'gamesList',
 	USER_ACTION_START: 'START',
 	USER_ACTION_DONE: 'DONE',
 	GAME_STAGE_STARTED: 'STARTED',
@@ -15,5 +18,6 @@ module.exports = {
 	GAME_ACTION_WAIT: 'WAIT',
 	GAME_ACTION_NOW: 'NOW',
 	GAME_ACTION_RESET: 'RESET',
-	GAME_RACE_MAX_SECONDS: 15
-};
+	GAME_RACE_MAX_SECONDS: 15,
+  GET_GAME_LIST: 'reqGamesList'
+});

@@ -1,7 +1,5 @@
-const { User, Constants } = require('byod-game-engine');
-const localConstants = require('./constants');
-
-Object.assign(Constants, localConstants);
+const { User } = require('byod-game-engine');
+const Constants = require('./constants');
 
 class TweakUser extends User {
 	constructor(socketServer, socket, game){

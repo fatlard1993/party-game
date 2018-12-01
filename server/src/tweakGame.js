@@ -1,46 +1,21 @@
-const { Game, Log, Cjs, Constants, UsersMap } = require('byod-game-engine');
-const localConstants = require('./constants');
+const { Game, Log, Cjs, UsersMap } = require('byod-game-engine');
+const Constants = require('./constants');
 const TweakUser = require('./tweakUser');
-
-Object.assign(Constants, localConstants);
 
 class TweakGame extends Game {
 	constructor(socketServer){
 		super(socketServer);
 
 		this.name = 'tweak';
+		this.user = TweakUser;
 
 		this.reset();
 
-		this.on(Constants.USER_JOIN_GAME, (socket, { userId, gameId }) => {
-			let user;
-
-			// Join existing game if still active
-			if(this.id === gameId) Log.info()('Users game is still active');
-
-			if(userId && UsersMap[userId]){
-				user = UsersMap[userId];
-				user.socket = socket;
-				user.socket.id = userId;
-			}
-
-			else user = new TweakUser(socketServer, socket, this);
-
-			socket.reply(Constants.USER_STATE_UPDATE, { id: user.id });
-			socket.reply(Constants.USER_STATE_UPDATE, user.state);
-
-			this.state.activeUserIds.push(user.id);
-
-			Log.info()(`User ${user.id} joined`);
-
-			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
+		this.on(Constants.USER_JOIN_GAME, (userId, socket) => {
+			if(this.state.stage.startsWith('WAITING ROOM')) this.state.stage = `WAITING ROOM - ${this.state.userCount} PLAYER${this.state.userCount > 1 ? 'S' : ''}`;
 		});
 
-		this.on(Constants.USER_DISCONNECT, (socket) => {
-			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
-		});
-
-		this.on(Constants.USER_GAME_ACTION, (socket, action) => {
+		this.on(Constants.USER_GAME_ACTION, (action, socket) => {
 			var userIds = this.state.activeUserIds, x, totalUsers = userIds.length;
 
 			if(action === Constants.GAME_ACTION_START) this.start();
@@ -78,7 +53,6 @@ class TweakGame extends Game {
 
 TweakGame.prototype.reset = function(){
 	this.state.winner = '';
-	this.state.activeUserIds = [];
 	this.state.action = Constants.GAME_ACTION_START;
 	this.state.stage = Constants.GAME_STAGE_WAITING_ROOM;
 };
@@ -99,9 +73,9 @@ TweakGame.prototype.end = function(){
 	Log.info()('Game over');
 
 	var scores = [], scoreKey = {};
-	var userIds = this.state.activeUserIds;
+	var userIds = this.userIds;
 
-	for(var x = 0, count = this.state.activeUserIds.length; x < count; ++x){
+	for(var x = 0, count = this.state.userCount; x < count; ++x){
 		scores.push(UsersMap[userIds[x]].state.score);
 		scoreKey[UsersMap[userIds[x]].state.score] = userIds[x];
 	}
