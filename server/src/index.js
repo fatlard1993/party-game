@@ -7,11 +7,14 @@ const PORT = process.env.PORT || 8080;
 const server = require('./httpServer').init(PORT);
 const socketServer = new SocketServer({ server });
 
-const mindMaze = new MindMazeGame(socketServer);
-// const tweak = new TweakGame(socketServer);
+var mindMaze;
+var tweak;
 
-Log.info()(`Started ${mindMaze.name}: ${mindMaze.id}`);
-// Log.info()(`Started ${tweak.name}: ${tweak.id}`);
+mindMaze = new MindMazeGame(socketServer);
+// tweak = new TweakGame(socketServer);
+
+if(mindMaze) Log.info()(`Started ${mindMaze.name}: ${mindMaze.id}`);
+if(tweak) Log.info()(`Started ${tweak.name}: ${tweak.id}`);
 
 //serve room selection files to connecting clients
 //manage rooms (game containers)
