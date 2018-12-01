@@ -23,20 +23,16 @@ div#grid div:active {
 	border: 5px solid rgb(197, 42, 42);
 }
 
-div#grid div.start {
-	background-color: #77d0d0;
+div#grid div.self {
+	background-image: linear-gradient(hsla(0, 0%, 0%, 0.3), hsla(0, 0%, 0%, 0.5));
 }
 
-div#grid div.last {
-	background-color: #77a8d0;
+div#grid div.path {
+	background-image: radial-gradient(hsla(0, 0%, 0%, 0.3) 5%, hsla(0, 0%, 0%, 0.5));
 }
 
-div#grid div.next {
-	background-color: #77d07b;
-}
-
-div#grid div.goal {
-	background-color: #e0c632;
+div#grid div.futures {
+	background: radial-gradient(#77d07b 5%, #fff 40%);
 }
 
 button {

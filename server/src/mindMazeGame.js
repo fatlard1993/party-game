@@ -8,8 +8,6 @@ class MindMazeGame extends Game {
 	constructor(socketServer){
 		super(socketServer);
 
-		this.name = 'MindMaze';
-
 		this.state.on('change', (event, property, value) => {
 			Log()('(mindMaze) Game state change - ', property, value);
 
@@ -88,6 +86,8 @@ class MindMazeGame extends Game {
 			}
 		});
 
+		this.name = 'MindMaze';
+
 		this.reset();
 	}
 }
@@ -112,8 +112,6 @@ MindMazeGame.prototype.start = function(){
 	var userCount = userIds.length;
 
 	this.state.gridSize = userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9);
-
-	this.generateMap(this.state.gridSize);
 
 	var startingPositions = {
 		'5': [
@@ -165,8 +163,10 @@ MindMazeGame.prototype.start = function(){
 	for(var x = 0; x < userCount; ++x){
 		UsersMap[userIds[x]].state.startingPosition = startingPositions[this.state.gridSize][x];
 
-		this.updateMap(UsersMap[userIds[x]].state.startingPosition, userIds[x]);
+		UsersMap[userIds[x]].state.steps.push(UsersMap[userIds[x]].state.startingPosition);
 	}
+
+	this.generateMap(this.state.gridSize);
 
 	++this.state.mapUpdate;
 };
