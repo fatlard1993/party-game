@@ -7,14 +7,25 @@ const PORT = process.env.PORT || 8080;
 const server = require('./httpServer').init(PORT);
 const socketServer = new SocketServer({ server });
 
-var mindMaze;
-var tweak;
+var games = {
+	mindMazeTest: new MindMazeGame(socketServer),
+	// mindMazeTestNumberTwo: new MindMazeGame(socketServer),
+	// tweakTest: new TweakGame(socketServer)
+};
 
-mindMaze = new MindMazeGame(socketServer);
-// tweak = new TweakGame(socketServer);
+socketServer.on('clientMessage', (socket, data) => {
+	Log()('(index) Client socket message: ', data.type, data.payload);
 
-if(mindMaze) Log.info()(`Started ${mindMaze.name}: ${mindMaze.id}`);
-if(tweak) Log.info()(`Started ${tweak.name}: ${tweak.id}`);
+	if(data.type === 'gamesList'){
+		var gamesList = {}, gameNames = Object.keys(games), gameCount = gameNames.length;
+
+		for(var x = 0; x < gameCount; ++x){
+			gamesList[gameNames[x]] = { game: games[gameNames[x]].name, id: games[gameNames[x]].id };
+		}
+
+		socket.reply('gamesList', gamesList);
+	}
+});
 
 //serve room selection files to connecting clients
 //manage rooms (game containers)

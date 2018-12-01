@@ -42,7 +42,7 @@ function Load(){
 
 		gameStatus.textContent += '.';
 
-		ws.reply('knock', localStorage.id);
+		ws.reply('knock', { userId: localStorage.userId, gameId: localStorage.gameId });
 	});
 
 	ws.addEventListener('message', function(evt){
@@ -50,12 +50,14 @@ function Load(){
 
 		var data = JSON.parse(evt.data);
 
+		if(data.type === 'reconnect') return (window.location.href = '/home');
+
 		if(data.type === 'userState'){
 			user = Object.assign(user, data.payload);
 
 			console.log('userState', data.payload);
 
-			if(user.id) localStorage.id = user.id;
+			if(user.id) localStorage.userId = user.id;
 
 			if(user.score){
 				console.log('Score: ', user.score);
@@ -69,6 +71,8 @@ function Load(){
 
 			if(game.stage) gameStatus.textContent = game.stage;
 			if(game.action) gameAction.textContent = game.action;
+
+			if(game.id) localStorage.gameId = game.id;
 
 			if(data.payload.map && game.map.length){
 				var gridPxSize = Math.min(600, Math.round(document.body.clientWidth * 0.8));

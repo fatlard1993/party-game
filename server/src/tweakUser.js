@@ -1,13 +1,11 @@
-const { User, Constants, UsersMap, Log } = require('byod-game-engine');
+const { User, Constants } = require('byod-game-engine');
 const localConstants = require('./constants');
 
 Object.assign(Constants, localConstants);
 
 class TweakUser extends User {
 	constructor(socketServer, socket, game){
-		super(socketServer, socket);
-
-		this.gameId = game.id;
+		super(socketServer, socket, game);
 
 		game.on(Constants.USER_LATENCY_CHECK, () => {
 			this.state.latency = new Date().getTime() - this.state.latencyCheckStart;

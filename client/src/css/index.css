@@ -1,5 +1,38 @@
+div#status {
+	margin: 0 auto;
+	font-size: 42px;
+	text-align: center;
+}
+
 button {
 	font-size: 36px;
 	margin: 10px auto;
 	display: block;
+}
+
+ul#games {
+	list-style: none;
+	padding: 0;
+	margin: 3% auto;
+	width: 80%;
+}
+
+ul#games li {
+	font-size: 26px;
+	border: 3px outset #a4a4a4;
+	margin: 5px 0;
+	padding: 3px;
+	color: #fff;
+	background-color: #1a1a1a;
+	text-indent: 1%;
+	cursor: pointer;
+}
+
+ul#games li:hover {
+	background-color: #884d00;
+}
+
+ul#games li:active {
+	background-color: #058800;
+	border-style: inset;
 }

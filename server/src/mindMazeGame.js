@@ -20,16 +20,16 @@ class MindMazeGame extends Game {
 			}
 		});
 
-		this.on(Constants.USER_JOIN_GAME, (socket, userId) => {
+		this.on(Constants.USER_JOIN_GAME, (socket, { userId, gameId }) => {
 			let user;
+
+			// Join existing game if still active
+			if(this.id === gameId) Log.info()('Users game is still active');
 
 			if(userId && UsersMap[userId]){
 				user = UsersMap[userId];
 				user.socket = socket;
 				user.socket.id = userId;
-
-				// Join existing game if still active
-				if(this.id === user.gameId) Log.info()('Users game is still active');
 			}
 
 			else user = new MindMazeUser(socketServer, socket, this);
@@ -52,6 +52,8 @@ class MindMazeGame extends Game {
 
 		this.on(Constants.USER_SET_STEP, (socket, position) => {
 			UsersMap[socket.id].state.steps.push(position);
+
+			this.state.maxSteps = Math.max(this.state.maxSteps, UsersMap[socket.id].state.steps.length);
 		});
 
 		this.on(Constants.USER_GAME_ACTION, (socket, action) => {
@@ -86,7 +88,7 @@ class MindMazeGame extends Game {
 			}
 		});
 
-		this.name = 'MindMaze';
+		this.name = 'mindMaze';
 
 		this.reset();
 	}
@@ -100,6 +102,7 @@ MindMazeGame.prototype.reset = function(){
 	this.state.mapUpdate = 0;
 	this.state.raceMapUpdate = 0;
 	this.state.gridSize = 0;
+	this.state.maxSteps = 0;
 	this.state.stage = Constants.GAME_STAGE_WAITING_ROOM;
 	this.state.action = Constants.GAME_ACTION_START;
 };
@@ -111,9 +114,15 @@ MindMazeGame.prototype.start = function(){
 	var userIds = this.state.activeUserIds;
 	var userCount = userIds.length;
 
-	this.state.gridSize = userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9);
+	this.state.gridSize = userCount <= 4 ? 3 : (userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9));
 
 	var startingPositions = {
+		'3': [
+			{ x: 1, y: 0 },
+			{ x: 1, y: 2 },
+			{ x: 0, y: 1 },
+			{ x: 2, y: 1 }
+		],
 		'5': [
 			{ x: 1, y: 0 },
 			{ x: 3, y: 0 },
@@ -188,7 +197,8 @@ MindMazeGame.prototype.race = function(step){
 
 	var keepGoing = this.stepUsers(step);
 
-	if(keepGoing) setTimeout(this.race.bind(this, ++step), Constants.GAME_RACE_STEP_TIME);
+	if(keepGoing) setTimeout(this.race.bind(this, ++step), Math.min(800, (Constants.GAME_RACE_MAX_SECONDS * 1000) / this.state.maxSteps));
+
 	else this.reset();
 };
 

@@ -2,15 +2,13 @@ const { User, Log, Cjs } = require('byod-game-engine');
 
 class MindMazeUser extends User {
 	constructor(socketServer, socket, game){
-		super(socketServer, socket);
+		super(socketServer, socket, game);
 
 		this.state.on('change', (event, property, value) => {
 			Log()('(mindMaze) User state change - ', property, value);
 
 			if(property === 'name') this.state.color = Cjs.stringToColor(value);
 		});
-
-		this.gameId = game.id;
 
 		this.state.name = this.id;
 

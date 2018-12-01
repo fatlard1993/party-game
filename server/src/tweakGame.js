@@ -8,18 +8,20 @@ class TweakGame extends Game {
 	constructor(socketServer){
 		super(socketServer);
 
-		this.name = 'Tweak';
+		this.name = 'tweak';
 
-		this.on(Constants.USER_JOIN_GAME, (socket, userId) => {
+		this.reset();
+
+		this.on(Constants.USER_JOIN_GAME, (socket, { userId, gameId }) => {
 			let user;
+
+			// Join existing game if still active
+			if(this.id === gameId) Log.info()('Users game is still active');
 
 			if(userId && UsersMap[userId]){
 				user = UsersMap[userId];
 				user.socket = socket;
 				user.socket.id = userId;
-
-				// Join existing game if still active
-				if(this.id === user.gameId) Log.info()('Users game is still active');
 			}
 
 			else user = new TweakUser(socketServer, socket, this);
@@ -71,8 +73,6 @@ class TweakGame extends Game {
 				UsersMap[socket.id].reset();
 			}
 		});
-
-		this.reset();
 	}
 }
 
