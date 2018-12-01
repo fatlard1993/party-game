@@ -4,113 +4,11 @@ const MindMazeUser = require('./mindMazeUser');
 
 Object.assign(Constants, localConstants);
 
-module.exports = class MindMazeGame extends Game {
+class MindMazeGame extends Game {
 	constructor(socketServer){
 		super(socketServer);
 
 		this.name = 'MindMaze';
-
-		this.reset = () => {
-			this.state.winner = '';
-			this.state.activeUserIds = [];
-			this.state.map = [];
-			this.state.mapUpdate = 0;
-			this.state.gridSize = 0;
-			this.state.stage = 'WAITING ROOM';
-			this.state.action = 'START';
-		};
-
-		this.start = () => {
-			this.state.stage = 'SET PATH';
-			this.state.action = 'DONE';
-
-			var userCount = this.state.activeUserIds.length;
-
-			this.state.gridSize = userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9);
-
-			this.generateMap(this.state.gridSize);
-
-			var startingPositions = {
-				'5': [
-					{ x: 1, y: 0 },
-					{ x: 3, y: 0 },
-					{ x: 1, y: 4 },
-					{ x: 3, y: 4 },
-					{ x: 0, y: 1 },
-					{ x: 0, y: 3 },
-					{ x: 4, y: 1 },
-					{ x: 4, y: 3 }
-				],
-				'7': [
-					{ x: 1, y: 0 },
-					{ x: 3, y: 0 },
-					{ x: 5, y: 0 },
-					{ x: 1, y: 4 },
-					{ x: 3, y: 4 },
-					{ x: 5, y: 4 },
-					{ x: 0, y: 1 },
-					{ x: 0, y: 3 },
-					{ x: 0, y: 5 },
-					{ x: 4, y: 1 },
-					{ x: 4, y: 3 },
-					{ x: 4, y: 5 }
-				],
-				'9': [
-					{ x: 1, y: 0 },
-					{ x: 3, y: 0 },
-					{ x: 5, y: 0 },
-					{ x: 7, y: 0 },
-					{ x: 1, y: 4 },
-					{ x: 3, y: 4 },
-					{ x: 5, y: 4 },
-					{ x: 7, y: 4 },
-					{ x: 0, y: 1 },
-					{ x: 0, y: 3 },
-					{ x: 0, y: 5 },
-					{ x: 0, y: 7 },
-					{ x: 4, y: 1 },
-					{ x: 4, y: 3 },
-					{ x: 4, y: 5 },
-					{ x: 4, y: 7 }
-				]
-			};
-
-			startingPositions[this.state.gridSize] = Cjs.shuffleArr(startingPositions[this.state.gridSize]);
-
-			var userIds = this.state.activeUserIds;
-
-			for(var x = 0, count = userIds.length; x < count; ++x){
-				UsersMap[userIds[x]].state.startingPosition = startingPositions[this.state.gridSize][x];
-
-				this.updateMap(UsersMap[userIds[x]].state.startingPosition, userIds[x]);
-			}
-
-			++this.state.mapUpdate;
-		};
-
-		this.stepUsers = (step) => {
-			var userIds = this.state.activeUserIds, x, totalUsers = userIds.length;
-
-			for(x = 0; x < totalUsers; ++x){
-				this.updateMap(UsersMap[userIds[x]].state.steps[step], userIds[x]);
-			}
-
-			++this.state.mapUpdate;
-		};
-
-		this.generateMap = (size) => {
-			for(var x = 0; x < size; ++x){
-				this.state.map[x] = [];
-
-				for(var y = 0; y < size; ++y) this.state.map[x][y] = 0;
-			}
-
-			++this.state.mapUpdate;
-		};
-
-		this.updateMap = (position, property) => {
-			this.state.map[position.x][position.y] = property;
-		};
 
 		this.state.on('change', (event, property, value) => {
 			Log()('(mindMaze) Game state change - ', property, value);
@@ -118,9 +16,13 @@ module.exports = class MindMazeGame extends Game {
 			if(property === 'mapUpdate'){
 				socketServer.broadcast('gameState', { map: this.state.map });
 			}
+
+			else if(property === 'raceMapUpdate'){
+				socketServer.broadcast('gameState', { map: this.state.raceMap });
+			}
 		});
 
-		socketServer.on(Constants.USER_JOIN_GAME, (socket, userId) => {
+		this.on(Constants.USER_JOIN_GAME, (socket, userId) => {
 			let user;
 
 			if(userId && UsersMap[userId]){
@@ -146,18 +48,18 @@ module.exports = class MindMazeGame extends Game {
 			socket.reply(Constants.GAME_STATE_UPDATE, this.state);
 		});
 
-		socketServer.on(Constants.USER_DISCONNECT, (socket) => {
+		this.on(Constants.USER_DISCONNECT, (socket) => {
 			this.state.activeUserIds.splice(this.state.activeUserIds.indexOf(socket.id), 1);
 		});
 
-		socketServer.on(Constants.USER_SET_STEP, (socket) => {
-
+		this.on(Constants.USER_SET_STEP, (socket, position) => {
+			UsersMap[socket.id].state.steps.push(position);
 		});
 
-		socketServer.on(Constants.USER_GAME_ACTION, (socket, action) => {
+		this.on(Constants.USER_GAME_ACTION, (socket, action) => {
 			var userIds = this.state.activeUserIds, x, totalUsers = userIds.length;
 
-			if(action === 'START'){
+			if(action === Constants.USER_ACTION_START){
 				UsersMap[socket.id].state.ready = true;
 
 				Log.info()(`Player #${socket.id} is ready to start`);
@@ -171,7 +73,7 @@ module.exports = class MindMazeGame extends Game {
 				if(allUsersReady) this.start();
 			}
 
-			else if(action === 'DONE'){
+			else if(action === Constants.USER_ACTION_DONE){
 				UsersMap[socket.id].state.done = true;
 
 				Log.info()(`Player #${socket.id} is done setting their path`);
@@ -182,20 +84,152 @@ module.exports = class MindMazeGame extends Game {
 					if(!UsersMap[userIds[x]].state.done) allUsersDone = false;
 				}
 
-				if(allUsersDone){
-					this.state.stage = 'RACE';
-					this.state.action = 'WAIT';
-
-					Log.info()('Begin Race!');
-
-
-
-					//todo move each player turn by turn until they reach the center or collide with another player
-					//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)
-				}
+				if(allUsersDone) this.race();
 			}
 		});
 
 		this.reset();
 	}
+}
+
+MindMazeGame.prototype.reset = function(){
+	this.state.winner = '';
+	this.state.activeUserIds = [];
+	this.state.map = [];
+	this.state.raceMap = [];
+	this.state.mapUpdate = 0;
+	this.state.raceMapUpdate = 0;
+	this.state.gridSize = 0;
+	this.state.stage = Constants.GAME_STAGE_WAITING_ROOM;
+	this.state.action = Constants.GAME_ACTION_START;
 };
+
+MindMazeGame.prototype.start = function(){
+	this.state.stage = Constants.GAME_STAGE_SET_PATH;
+	this.state.action = Constants.GAME_ACTION_DONE;
+
+	var userIds = this.state.activeUserIds;
+	var userCount = userIds.length;
+
+	this.state.gridSize = userCount <= 8 ? 5 : (userCount <= 12 ? 7 : 9);
+
+	this.generateMap(this.state.gridSize);
+
+	var startingPositions = {
+		'5': [
+			{ x: 1, y: 0 },
+			{ x: 3, y: 0 },
+			{ x: 1, y: 4 },
+			{ x: 3, y: 4 },
+			{ x: 0, y: 1 },
+			{ x: 0, y: 3 },
+			{ x: 4, y: 1 },
+			{ x: 4, y: 3 }
+		],
+		'7': [
+			{ x: 1, y: 0 },
+			{ x: 3, y: 0 },
+			{ x: 5, y: 0 },
+			{ x: 1, y: 4 },
+			{ x: 3, y: 4 },
+			{ x: 5, y: 4 },
+			{ x: 0, y: 1 },
+			{ x: 0, y: 3 },
+			{ x: 0, y: 5 },
+			{ x: 4, y: 1 },
+			{ x: 4, y: 3 },
+			{ x: 4, y: 5 }
+		],
+		'9': [
+			{ x: 1, y: 0 },
+			{ x: 3, y: 0 },
+			{ x: 5, y: 0 },
+			{ x: 7, y: 0 },
+			{ x: 1, y: 4 },
+			{ x: 3, y: 4 },
+			{ x: 5, y: 4 },
+			{ x: 7, y: 4 },
+			{ x: 0, y: 1 },
+			{ x: 0, y: 3 },
+			{ x: 0, y: 5 },
+			{ x: 0, y: 7 },
+			{ x: 4, y: 1 },
+			{ x: 4, y: 3 },
+			{ x: 4, y: 5 },
+			{ x: 4, y: 7 }
+		]
+	};
+
+	startingPositions[this.state.gridSize] = Cjs.shuffleArr(startingPositions[this.state.gridSize]);
+
+	for(var x = 0; x < userCount; ++x){
+		UsersMap[userIds[x]].state.startingPosition = startingPositions[this.state.gridSize][x];
+
+		this.updateMap(UsersMap[userIds[x]].state.startingPosition, userIds[x]);
+	}
+
+	++this.state.mapUpdate;
+};
+
+MindMazeGame.prototype.race = function(step){
+	if(typeof step === 'undefined'){
+		this.state.stage = Constants.GAME_STAGE_RACE;
+		this.state.action = Constants.GAME_ACTION_WAIT;
+
+		++this.state.raceMapUpdate;
+
+		Log.info()('Begin Race!');
+
+		//todo move each player turn by turn until they reach the center or collide with another player
+		//users get points for moving a space, and more points for getting to the middle, bonus points for getting there fast (time bonus, or place bonus)
+
+		step = 0;
+	}
+
+	var keepGoing = this.stepUsers(step);
+
+	if(keepGoing) setTimeout(this.race.bind(this, ++step), Constants.GAME_RACE_STEP_TIME);
+	else this.reset();
+};
+
+MindMazeGame.prototype.stepUsers = function(step){
+	Log()('stepUsers: ', step);
+
+	var userIds = this.state.activeUserIds, x, totalUsers = userIds.length, keepGoing = true;
+
+	for(x = 0; x < totalUsers; ++x){
+		if(!UsersMap[userIds[x]].state.steps[step]) keepGoing = false;
+
+		else this.updateRaceMap(UsersMap[userIds[x]].state.steps[step], userIds[x]);
+	}
+
+	++this.state.raceMapUpdate;
+
+	return keepGoing;
+};
+
+MindMazeGame.prototype.generateMap = function(size){
+	for(var x = 0; x < size; ++x){
+		this.state.map[x] = [];
+		this.state.raceMap[x] = [];
+
+		for(var y = 0; y < size; ++y){
+			this.state.map[x][y] = 0;
+			this.state.raceMap[x][y] = 0;
+		}
+	}
+
+	++this.state.mapUpdate;
+};
+
+MindMazeGame.prototype.updateMap = function(position, property){
+	this.state.map[position.x][position.y] = property;
+};
+
+MindMazeGame.prototype.updateRaceMap = function(position, property){
+	Log.warn()('updateRaceMap', position, property);
+
+	this.state.raceMap[position.x][position.y] = property;
+};
+
+module.exports = MindMazeGame;

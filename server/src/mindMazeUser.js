@@ -1,18 +1,18 @@
-const { User, Constants, UsersMap, Log } = require('byod-game-engine');
-const localConstants = require('./constants');
+const { User } = require('byod-game-engine');
 
-Object.assign(Constants, localConstants);
-
-module.exports = class MindMazeUser extends User {
+class MindMazeUser extends User {
 	constructor(socketServer, socket, game){
 		super(socketServer, socket);
 
 		this.gameId = game.id;
 
-		this.reset = () => {
-			this.state.score = 0;
-		};
-
 		this.reset();
 	}
+}
+
+MindMazeUser.prototype.reset = function(){
+	this.state.score = 0;
+	this.state.steps = [];
 };
+
+module.exports = MindMazeUser;

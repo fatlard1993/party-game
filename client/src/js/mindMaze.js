@@ -103,10 +103,12 @@ function Load(){
 						else gridPoint.textContent = game.map[x][y];
 					}
 
+					else gridPoint.className = '';
+
 					game.grid[x][y] = gridPoint;
 				}
 
-				highlightNextSpaces(user.startingPosition);
+				if(game.stage === 'SET PATH') highlightNextSpaces(user.startingPosition);
 
 				// game.grid[Math.floor(game.gridSize / 2)][Math.floor(game.gridSize / 2)].className = 'goal';
 			}
