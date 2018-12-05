@@ -44,6 +44,7 @@ class MindMazeGame extends Game {
 				}
 
 				if(allUsersReady) this.start();
+				else socket.reply('gameState', { action: 'WAIT' });
 			}
 
 			else if(action === Constants.USER_ACTION_DONE){
@@ -64,11 +65,7 @@ class MindMazeGame extends Game {
 }
 
 MindMazeGame.prototype.reset = function(){
-	this.users = {};
-	this.userIds = [];
-
 	this.state.winner = '';
-	this.state.userCount = 0;
 	this.state.map = [];
 	this.state.mapUpdate = 0;
 	this.state.gridSize = 0;
@@ -81,6 +78,10 @@ MindMazeGame.prototype.reset = function(){
 		UsersMap[this.userIds[x]].state.startingPosition = null;
 		UsersMap[this.userIds[x]].state.stopped = false;
 	}
+
+	// this.state.userCount = 0;
+	// this.users = {};
+	// this.userIds = [];
 };
 
 MindMazeGame.prototype.start = function(){
@@ -177,6 +178,8 @@ MindMazeGame.prototype.race = function(step){
 };
 
 MindMazeGame.prototype.stepUsers = function(step){
+	if(this.state.stage !== 'RACE') return;
+
 	Log()('stepUsers: ', step);
 
 	var userIds = this.userIds, x, y, totalUsers = this.state.userCount, keepGoing = true;
